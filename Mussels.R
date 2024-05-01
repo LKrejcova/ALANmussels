@@ -6,7 +6,6 @@
 library(readr)
 shock_l <- read_csv("https://raw.githubusercontent.com/LKrejcova/ALANmussels/main/Light_shock.csv", show_col_types = FALSE) # long format
 shock_w <- read_csv("https://raw.githubusercontent.com/LKrejcova/ALANmussels/main/Light_shock_table.csv", show_col_types = FALSE) # wide format
-shock_w <- (shock_w)[1:6,]
 
 # acclimatization 1
 acc_l <- read_csv("https://raw.githubusercontent.com/LKrejcova/ALANmussels/main/Light_acc.csv", show_col_types = FALSE) # long format
@@ -22,9 +21,9 @@ acc_wt <- data.frame(t(acc_w[-1]))
 acc2_wt <- data.frame(t(acc2_w[-1]))
 
 # add headers
-colnames(shock_wt) <- c("Treatment", "Volume", "T0", "T10", "T20", "T30")
-colnames(acc_wt) <- c("Treatment", "Volume", "T0", "T10", "T20", "T30")
-colnames(acc2_wt) <- c("Treatment", "Volume", "T0", "T10", "T20", "T30")
+colnames(shock_wt) <- c("Treatment", "Volume", "T0", "T10", "T20", "T30", "Length")
+colnames(acc_wt) <- c("Treatment", "Volume", "T0", "T10", "T20", "T30", "Length")
+colnames(acc2_wt) <- c("Treatment", "Volume", "T0", "T10", "T20", "T30", "Length")
 
 # make variables factors
 shock_wt$Treatment <- as.factor(shock_wt$Treatment)
@@ -37,18 +36,21 @@ shock_wt$T0 <- as.numeric(shock_wt$T0)
 shock_wt$T10 <- as.numeric(shock_wt$T10)
 shock_wt$T20 <- as.numeric(shock_wt$T20)
 shock_wt$T30 <- as.numeric(shock_wt$T30)
+shock_wt$Length <- as.numeric(shock_wt$Length)
 
 acc_wt$Volume <- as.numeric(acc_wt$Volume)
 acc_wt$T0 <- as.numeric(acc_wt$T0)
 acc_wt$T10 <- as.numeric(acc_wt$T10)
 acc_wt$T20 <- as.numeric(acc_wt$T20)
 acc_wt$T30 <- as.numeric(acc_wt$T30)
+acc_wt$Length <- as.numeric(acc_wt$Length)
 
 acc2_wt$Volume <- as.numeric(acc2_wt$Volume)
 acc2_wt$T0 <- as.numeric(acc2_wt$T0)
 acc2_wt$T10 <- as.numeric(acc2_wt$T10)
 acc2_wt$T20 <- as.numeric(acc2_wt$T20)
 acc2_wt$T30 <- as.numeric(acc2_wt$T30)
+acc2_wt$Length <- as.numeric(acc2_wt$Length)
 
 #' Since we lost the particle count for A1 at T0 in the acc2 dataset, we replace it with an average 
 #' of the particle values at T0 in the same treatment
@@ -127,7 +129,7 @@ shock_wt_20$filtration <- shock_wt_20$grazing * shock_wt_20$Volume
 par(mfrow = c(1,1))
 boxplot(filtration ~ Treatment, data = shock_wt_20,
         las = 1,
-        main = "Filtration rate",
+        main = "Light shock",
         ylab = "Filtration rate [L/individual/hour]",
         xlab = "",
         col = c("grey", "green", "red", "yellow"))
@@ -289,7 +291,7 @@ acc2_w_20$filtration <- acc2_w_20$grazing * acc2_w_20$Volume
 par(mfrow = c(1,1))
 boxplot(filtration ~ Treatment, data = acc2_w_20,
         las = 1,
-        main = "Filtration rate",
+        main = "Acclimatized (9 days)",
         ylab = "Filtration rate [L/individual/hour]",
         xlab = "",
         col = c("grey", "green", "red", "yellow"))
@@ -301,3 +303,44 @@ summary(fit_acc2_20)
 # look at TA-Plot and QQ-Plot 
 par(mfrow = 1:2)
 plot(fit_acc_20, which = 1:2)
+
+################################################################################
+
+# COMPARE EXPOSURE TIMES
+
+################################################################################
+shock_wt_20$exposure <- as.factor(rep("shock", 16))
+acc_w_20$exposure <- as.factor(rep("acc", 16))
+acc2_w_20$exposure <- as.factor(rep("acc2", 16))
+
+all_20 <- rbind(shock_wt_20, acc_w_20, acc2_w_20)
+
+fit_exp <- aov(filtration ~ Treatment + exposure, data = all_20)
+summary(fit_exp)
+
+################################################################################
+
+# LOOK AT EFFECT OF LENGTH
+
+################################################################################
+fit_length_shock <- aov(filtration ~ Treatment + Length, data = shock_wt_20)
+summary(fit_length_shock)
+
+fit_length_acc <- aov(filtration ~ Treatment + Length, data = acc_w_20)
+summary(fit_length_acc)
+
+fit_length_acc2 <- aov(filtration ~ Treatment * Length, data = acc2_w_20)
+summary(fit_length_acc2)
+
+fit_length_all <- aov(filtration ~ Treatment + Length, data = all_20)
+summary(fit_length_all)
+
+################################################################################
+
+# LOOK AT EFFECT OF INDIVIDUAL MUSSELS
+
+################################################################################
+all_20$ind <- as.factor(rep(1:16,3))
+
+fit_ind <- aov(filtration ~ Treatment * ind, data = all_20)
+summary(fit_ind)
